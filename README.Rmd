@@ -95,9 +95,6 @@ for (x in dec_types) {
     mwi[[x]] = as.logical(mwi[[x]])
 }
 
-# save table
-write.csv(mwi, 'mwi_combined_def.csv', quote=FALSE, row.names=FALSE)
-
 # Gender colors
 gender_colors = ifelse(mwi_anthro_clean$sex == 'Male', 'red', 'blue')
 
@@ -219,6 +216,10 @@ ggplot(mwi, aes(hh_female, fill=missing_micronutrient)) +
 
 mwi %>% group_by(hh_female) %>%
     summarise(ratio_missing=sum(missing_micronutrient == TRUE) / n())
+
+# save table
+write.csv(mwi, 'output/mwi_combined.csv', quote=FALSE, row.names=FALSE)
+
 ```
 
 ### Gender / food groups

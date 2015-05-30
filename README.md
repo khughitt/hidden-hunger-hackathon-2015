@@ -107,9 +107,6 @@ for (x in dec_types) {
     mwi[[x]] = as.logical(mwi[[x]])
 }
 
-# save table
-write.csv(mwi, 'mwi_combined_def.csv', quote=FALSE, row.names=FALSE)
-
 # Gender colors
 gender_colors = ifelse(mwi_anthro_clean$sex == 'Male', 'red', 'blue')
 
@@ -304,6 +301,11 @@ mwi %>% group_by(hh_female) %>%
     ##   hh_female ratio_missing
     ## 1     FALSE        0.7065
     ## 2      TRUE        0.7760
+
+``` r
+# save table
+write.csv(mwi, 'output/mwi_combined.csv', quote=FALSE, row.names=FALSE)
+```
 
 ### Gender / food groups
 
