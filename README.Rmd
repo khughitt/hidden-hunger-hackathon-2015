@@ -50,6 +50,7 @@ library('readr')
 library('dplyr')
 library('knitr')
 library('bpca')
+library('reshape2')
 
 # Malawi
 mwi_nutrition = read_csv('./nutrition_indicators/Malawi/mwi_nutrition.csv')
@@ -65,8 +66,9 @@ mwi_anthro_clean = mwi_anthropometry %>%
 #df2 = mwi_nutrition %>% select(tot_vita_A_cons, tot_zinc_cons, tot_fol_cons,
 #                               tot_iron_
 
-# Nutrition deficiencies
-nutrition_def = mwi_nutrition %>% select(hhid, hh_weight, contains('def_'))
+# Pull in some of the fields from the nutrition table 
+nutrition_def = mwi_nutrition %>% 
+    select(hhid, hh_female, hh_weight, contains('def_'))
 
 # Households found in both tables
 print("Total number of households:")
@@ -87,6 +89,10 @@ mwi[mwi == 'Yes'] = TRUE
 # recode kcal_ae_hh (different from other logical variables)
 mwi$def_kcal_ae_hh = ifelse(mwi$def_kcal_ae_hh == 1, TRUE, FALSE)
 
+for (x in colnames(mwi)[grepl('def_', colnames(mwi))]) {
+    mwi[[x]] = as.logical(mwi[[x]])
+}
+
 # save table
 write.csv(mwi, 'mwi_combined_def.csv', quote=FALSE, row.names=FALSE)
 
@@ -106,4 +112,39 @@ heatmap.2(antho_clean_mat, trace='none', dendrogram='row', RowSideColors=gender_
 # Ethiopia
 #eth_nutrition = read_csv('./nutrition_indicators/Ethiopia/eth_nutrition.csv')
 #eth_anthropometry = read_csv('./nutrition_indicators/Ethiopia/eth_anthropometry.csv')
+```
+
+BMI relationship to household gender composition?
+
+```{r}
+#ggplot(mwi_anthro_clean, aes(bmiz06, fill=sex)) + geom_bar(position='dodge')
+ggplot(mwi, aes(bmiz06, fill=sex)) + geom_density(alpha=0.75)
+
+hh_gender_composition = mwi %>%
+    group_by(hhid) %>% 
+    summarise(num_males=sum(sex == 'Male'), 
+              num_females=sum(sex == 'Female')) %>%
+    mutate(ratio_female = num_females / (num_females + num_males))
+
+mwi = merge(mwi, hh_gender_composition)
+
+table(mwi$ratio_female)
+
+# BMI by household gender composition (only use ratios for which we have > 5
+# data points)
+ggplot(mwi %>% filter(ratio_female %in% c(0, 0.5, 0.75)), 
+                                aes(def_kcal_req_hh, fill=factor(ratio_female))) + 
+    geom_bar(position='dodge')
+
+# Female head of household
+ggplot(mwi, aes(def_kcal_req_hh, fill=factor(hh_female))) + 
+    geom_bar(position='dodge')
+
+# Deficiencies
+mwi_defs = mwi %>% select(hhid, hh_female, contains('def_'))
+mwi_defs = melt(mwi_defs, id.vars=c('hhid', 'hh_female'))
+colnames(mwi_defs) = c('hhid', 'hh_female', 'deficiency', 'is_deficient')
+
+ggplot(mwi_defs, aes(is_deficient, fill=factor(hh_female))) + 
+    geom_bar(position='dodge') + facet_grid(.~deficiency)
 ```
