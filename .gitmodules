@@ -1,0 +1,3 @@
+[submodule "nutrition_indicators"]
+	path = nutrition_indicators
+	url = https://github.com/harvestchoice/nutrition_indicators
