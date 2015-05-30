@@ -37,23 +37,11 @@ mwi_nutrition = read_csv('./nutrition_indicators/Malawi/mwi_nutrition.csv')
 mwi_anthropometry = read_csv('./nutrition_indicators/Malawi/mwi_anthropometry.csv')
 
 # Example rows
-kable(t(mwi_anthropometry[1,]))
+#kable(t(mwi_anthropometry[1,]))
+mwi_anthropometry[1,] %>% glimpse()
 ```
 
-|:-------|:-----------|
-| hhid   | 2081111302 |
-| pid    | 9          |
-| sex    | Female     |
-| haz06  | -2.08      |
-| waz06  | -1.43      |
-| whz06  | -0.59      |
-| bmiz06 | -0.25      |
-| wa\_m  | 0          |
-| wa\_s  | 0          |
-| ha\_m  | 1          |
-| ha\_s  | 0          |
-| wh\_m  | 0          |
-| wh\_s  | 0          |
+Observations: 1 Variables: $ hhid (int) 2081111302 $ pid (int) 9 $ sex (chr) "Female" $ haz06 (dbl) -2.08 $ waz06 (dbl) -1.43 $ whz06 (dbl) -0.59 $ bmiz06 (dbl) -0.25 $ wa\_m (int) 0 $ wa\_s (int) 0 $ ha\_m (int) 1 $ ha\_s (int) 0 $ wh\_m (int) 0 $ wh\_s (int) 0
 
 ``` r
 mwi_anthro_clean = mwi_anthropometry %>% 

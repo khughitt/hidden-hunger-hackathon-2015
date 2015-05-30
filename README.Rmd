@@ -56,7 +56,8 @@ mwi_nutrition = read_csv('./nutrition_indicators/Malawi/mwi_nutrition.csv')
 mwi_anthropometry = read_csv('./nutrition_indicators/Malawi/mwi_anthropometry.csv')
 
 # Example rows
-kable(t(mwi_anthropometry[1,]))
+#kable(t(mwi_anthropometry[1,]))
+mwi_anthropometry[1,] %>% glimpse()
 
 mwi_anthro_clean = mwi_anthropometry %>% 
     select(-wa_m, -wa_s, -ha_m, -ha_s, -wh_m, -wh_s)
@@ -87,7 +88,7 @@ mwi[mwi == 'Yes'] = TRUE
 mwi$def_kcal_ae_hh = ifelse(mwi$def_kcal_ae_hh == 1, TRUE, FALSE)
 
 # save table
-write.csv(mwi, 'output/mwi_combined_def.csv', quote=FALSE, row.names=FALSE)
+write.csv(mwi, 'mwi_combined_def.csv', quote=FALSE, row.names=FALSE)
 
 # Gender colors
 gender_colors = ifelse(mwi_anthro_clean$sex == 'Male', 'red', 'blue')
