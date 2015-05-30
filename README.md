@@ -53,7 +53,8 @@ mwi_anthro_clean = mwi_anthropometry %>%
 
 # Pull in some of the fields from the nutrition table 
 nutrition_def = mwi_nutrition %>% 
-    select(hhid, hh_female, hh_weight, contains('def_'))
+    select(hhid, hh_female, hh_weight, contains('def_'), sh_oil_exp,
+           sh_meat_exp, sh_milk_exp, foodvalue_totalyr)
 
 # Households found in both tables
 print("Total number of households:")
@@ -198,6 +199,8 @@ ggplot(mwi, aes(def_kcal_req_hh, fill=factor(hh_female))) +
 
 ### Micronutrient deficiency by gender of head of household
 
+#### Individual micronutrients (and calories)
+
 ``` r
 # Deficiencies
 mwi_defs = mwi %>% select(hhid, hh_female, contains('def_'))
@@ -215,3 +218,105 @@ for (group in split(dec_types, ceiling(seq_along(dec_types) / 5))) {
 ```
 
 ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-1.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-2.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-3.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-4.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-5.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-6.png)
+
+#### Aggregate micronutrients
+
+``` r
+# most common missing micronutrients
+colSums(mwi%>% select(contains('def_')))
+```
+
+    ##     def_kcal_rec_hh     def_kcal_req_hh     def_prot_rec_hh 
+    ##                  71                 106                 203 
+    ##     def_prot_req_hh     def_iron_rec_hh     def_iron_req_hh 
+    ##                 216                  11                  71 
+    ##     def_zinc_rec_hh     def_zinc_req_hh   def_vita_A_rec_hh 
+    ##                  29                  59                 173 
+    ##   def_vita_A_req_hh   def_vita_E_rec_hh   def_vita_E_req_hh 
+    ##                 227                  84                 117 
+    ##   def_vita_C_rec_hh   def_vita_C_req_hh    def_ribof_rec_hh 
+    ##                 257                 322                 216 
+    ##    def_ribof_req_hh     def_thia_rec_hh     def_thia_req_hh 
+    ##                 301                 305                 354 
+    ##      def_nia_rec_hh      def_nia_req_hh  def_vita_B6_rec_hh 
+    ##                 167                 243                 218 
+    ##  def_vita_B6_req_hh      def_fol_rec_hh      def_fol_req_hh 
+    ##                 287                  51                  94 
+    ##  def_calcium_rec_hh  def_calcium_req_hh def_vita_B12_rec_hh 
+    ##                   8                   8                 134 
+    ## def_vita_B12_req_hh      def_kcal_ae_hh 
+    ##                 134                 429
+
+``` r
+# Add a column: missing one or more key micronutrients: Iron, Zinc, Folate, Vitamin A
+mwi = mwi %>% mutate(missing_micronutrient=(def_iron_rec_hh == TRUE     | 
+                                            def_fol_rec_hh == TRUE      | 
+                                            def_calcium_rec_hh == TRUE  | 
+                                            def_thia_rec_hh == TRUE     | 
+                                            def_vita_A_rec_hh == TRUE   | 
+                                            def_vita_B6_rec_hh == TRUE  | 
+                                            def_vita_B12_rec_hh == TRUE | 
+                                            def_vita_C_rec_hh == TRUE   | 
+                                            def_vita_E_rec_hh == TRUE   |
+                                            def_zinc_rec_hh == TRUE     |
+                                            def_ribof_rec_hh == TRUE
+                                            ))
+
+table(mwi$missing_micronutrient)
+```
+
+    ## 
+    ## FALSE  TRUE 
+    ##   126   408
+
+``` r
+ggplot(mwi, aes(missing_micronutrient, fill=hh_female)) +
+    geom_bar(position='dodge') 
+```
+
+![](README_files/figure-markdown_github/deficiencies_by_head_of_household_agg-1.png)
+
+``` r
+mwi %>% group_by(missing_micronutrient) %>%
+    summarise(ratio_female=sum(hh_female == TRUE) / n())
+```
+
+    ## Source: local data frame [2 x 2]
+    ## 
+    ##   missing_micronutrient ratio_female
+    ## 1                 FALSE       0.7857
+    ## 2                  TRUE       0.8407
+
+``` r
+ggplot(mwi, aes(hh_female, fill=missing_micronutrient)) +
+    geom_bar(position='dodge') 
+```
+
+![](README_files/figure-markdown_github/deficiencies_by_head_of_household_agg-2.png)
+
+``` r
+mwi %>% group_by(hh_female) %>%
+    summarise(ratio_missing=sum(missing_micronutrient == TRUE) / n())
+```
+
+    ## Source: local data frame [2 x 2]
+    ## 
+    ##   hh_female ratio_missing
+    ## 1     FALSE        0.7065
+    ## 2      TRUE        0.7760
+
+### Gender / food groups
+
+``` r
+ggplot(mwi, aes(missing_micronutrient, sh_meat_exp, color=hh_female)) + 
+    geom_point() +
+    geom_point(position="jitter")
+```
+
+    ## Warning in loop_apply(n, do.ply): Removed 287 rows containing missing
+    ## values (geom_point).
+
+    ## Warning in loop_apply(n, do.ply): Removed 287 rows containing missing
+    ## values (geom_point).
+
+![](README_files/figure-markdown_github/gender_food_groups-1.png)
