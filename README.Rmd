@@ -162,6 +162,12 @@ x = as.matrix(x)
 heatmap.2(x, trace='none', RowSideColors=gender_colors)
 ```
 
+##### Correlation of micronutrient profiles
+
+```{r micronutrient_cor, fig.width=1080/96, fig.height=1080/96}
+heatmap.2(cor(x), trace='none', dendrogram='row')
+```
+
 ### Nutrition
 
 #### BMI vs. gender

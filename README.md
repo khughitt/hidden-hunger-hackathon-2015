@@ -190,6 +190,14 @@ heatmap.2(x, trace='none', RowSideColors=gender_colors)
 
 ![](README_files/figure-markdown_github/heatmap_extended-1.png)
 
+##### Correlation of micronutrient profiles
+
+``` r
+heatmap.2(cor(x), trace='none', dendrogram='row')
+```
+
+![](README_files/figure-markdown_github/micronutrient_cor-1.png)
+
 ### Nutrition
 
 #### BMI vs. gender
