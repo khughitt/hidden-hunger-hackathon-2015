@@ -101,7 +101,8 @@ mwi[mwi == 'Yes'] = TRUE
 # recode kcal_ae_hh (different from other logical variables)
 mwi$def_kcal_ae_hh = ifelse(mwi$def_kcal_ae_hh == 1, TRUE, FALSE)
 
-for (x in colnames(mwi)[grepl('def_', colnames(mwi))]) {
+dec_types = colnames(mwi)[grepl('def_', colnames(mwi))]
+for (x in dec_types) {
     mwi[[x]] = as.logical(mwi[[x]])
 }
 
@@ -113,20 +114,30 @@ gender_colors = ifelse(mwi_anthro_clean$sex == 'Male', 'red', 'blue')
 
 # Numeric part of anthropometry data
 antho_clean_mat = as.matrix(mwi_anthro_clean %>% select(haz06, waz06, whz06, bmiz06))
+```
 
-# Biplot
+Visualization
+-------------
+
+### Exploratory data analysis
+
+#### Antropometric data
+
+##### Biplot
+
+``` r
 plot(bpca(antho_clean_mat), var.factor=.5, obj.col=gender_colors)
 title("Biplot")
 ```
 
-![](README_files/figure-markdown_github/load_data-1.png)
+![](README_files/figure-markdown_github/biplot-1.png) \#\#\#\#\# Heatmap
 
 ``` r
 # Heatmap
 heatmap.2(antho_clean_mat, trace='none', dendrogram='row', RowSideColors=gender_colors)
 ```
 
-![](README_files/figure-markdown_github/load_data-2.png)
+![](README_files/figure-markdown_github/heatmap-1.png)
 
 ``` r
 # Ethiopia
@@ -134,16 +145,20 @@ heatmap.2(antho_clean_mat, trace='none', dendrogram='row', RowSideColors=gender_
 #eth_anthropometry = read_csv('./nutrition_indicators/Ethiopia/eth_anthropometry.csv')
 ```
 
-BMI relationship to household gender composition?
+### Nutrition
+
+#### BMI vs. gender
 
 ``` r
-#ggplot(mwi_anthro_clean, aes(bmiz06, fill=sex)) + geom_bar(position='dodge')
 ggplot(mwi, aes(bmiz06, fill=sex)) + geom_density(alpha=0.75)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-1-1.png)
+![](README_files/figure-markdown_github/bmi_vs_gender-1.png)
+
+#### BMI relationship to household gender composition?
 
 ``` r
+# Create columns corresponding to gender ratio in each household
 hh_gender_composition = mwi %>%
     group_by(hhid) %>% 
     summarise(num_males=sum(sex == 'Male'), 
@@ -169,7 +184,9 @@ ggplot(mwi %>% filter(ratio_female %in% c(0, 0.5, 0.75)),
     geom_bar(position='dodge')
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-1-2.png)
+![](README_files/figure-markdown_github/bmi_vs_household_gender_composition-1.png)
+
+### Female head of household
 
 ``` r
 # Female head of household
@@ -177,7 +194,9 @@ ggplot(mwi, aes(def_kcal_req_hh, fill=factor(hh_female))) +
     geom_bar(position='dodge')
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-1-3.png)
+![](README_files/figure-markdown_github/female_head_of_household-1.png)
+
+### Micronutrient deficiency by gender of head of household
 
 ``` r
 # Deficiencies
@@ -185,8 +204,14 @@ mwi_defs = mwi %>% select(hhid, hh_female, contains('def_'))
 mwi_defs = melt(mwi_defs, id.vars=c('hhid', 'hh_female'))
 colnames(mwi_defs) = c('hhid', 'hh_female', 'deficiency', 'is_deficient')
 
-ggplot(mwi_defs, aes(is_deficient, fill=factor(hh_female))) + 
-    geom_bar(position='dodge') + facet_grid(.~deficiency)
+# Break up and plot
+for (group in split(dec_types, ceiling(seq_along(dec_types) / 5))) {
+    plt = ggplot(mwi_defs %>% filter(deficiency %in% group), 
+           aes(is_deficient, fill=factor(hh_female))) + 
+        geom_bar(position='dodge') + facet_grid(.~deficiency) +
+        theme(axis.text.x=element_text(angle=-90, hjust = 0))
+    print(plt)
+}
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-1-4.png)
+![](README_files/figure-markdown_github/deficiencies_by_head_of_household-1.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-2.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-3.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-4.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-5.png) ![](README_files/figure-markdown_github/deficiencies_by_head_of_household-6.png)
