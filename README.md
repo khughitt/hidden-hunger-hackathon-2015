@@ -110,6 +110,43 @@ for (x in dec_types) {
 # Gender colors
 gender_colors = ifelse(mwi_anthro_clean$sex == 'Male', 'red', 'blue')
 
+# Create columns corresponding to gender ratio in each household
+hh_gender_composition = mwi %>%
+    group_by(hhid) %>% 
+    summarise(num_males=sum(sex == 'Male'), 
+              num_females=sum(sex == 'Female')) %>%
+    mutate(ratio_female = num_females / (num_females + num_males))
+
+mwi = merge(mwi, hh_gender_composition)
+
+# most common missing micronutrients
+colSums(mwi%>% select(contains('def_')))
+```
+
+    def_kcal_rec_hh     def_kcal_req_hh     def_prot_rec_hh 
+                 71                 106                 203 
+    def_prot_req_hh     def_iron_rec_hh     def_iron_req_hh 
+                216                  11                  71 
+    def_zinc_rec_hh     def_zinc_req_hh   def_vita_A_rec_hh 
+                 29                  59                 173 
+
+def\_vita\_A\_req\_hh def\_vita\_E\_rec\_hh def\_vita\_E\_req\_hh 227 84 117 def\_vita\_C\_rec\_hh def\_vita\_C\_req\_hh def\_ribof\_rec\_hh 257 322 216 def\_ribof\_req\_hh def\_thia\_rec\_hh def\_thia\_req\_hh 301 305 354 def\_nia\_rec\_hh def\_nia\_req\_hh def\_vita\_B6\_rec\_hh 167 243 218 def\_vita\_B6\_req\_hh def\_fol\_rec\_hh def\_fol\_req\_hh 287 51 94 def\_calcium\_rec\_hh def\_calcium\_req\_hh def\_vita\_B12\_rec\_hh 8 8 134 def\_vita\_B12\_req\_hh def\_kcal\_ae\_hh 134 429
+
+``` r
+# Add a column: missing one or more key micronutrients: Iron, Zinc, Folate, Vitamin A
+mwi = mwi %>% mutate(missing_micronutrient=(def_iron_rec_hh == TRUE     | 
+                                            def_fol_rec_hh == TRUE      | 
+                                            def_calcium_rec_hh == TRUE  | 
+                                            def_thia_rec_hh == TRUE     | 
+                                            def_vita_A_rec_hh == TRUE   | 
+                                            def_vita_B6_rec_hh == TRUE  | 
+                                            def_vita_B12_rec_hh == TRUE | 
+                                            def_vita_C_rec_hh == TRUE   | 
+                                            def_vita_E_rec_hh == TRUE   |
+                                            def_zinc_rec_hh == TRUE     |
+                                            def_ribof_rec_hh == TRUE
+                                            ))
+
 # Numeric part of anthropometry data
 antho_clean_mat = as.matrix(mwi_anthro_clean %>% select(haz06, waz06, whz06, bmiz06))
 ```
@@ -130,6 +167,8 @@ title("Biplot")
 
 ![](README_files/figure-markdown_github/biplot-1.png) \#\#\#\#\# Heatmap
 
+###### Anthro data
+
 ``` r
 # Heatmap
 heatmap.2(antho_clean_mat, trace='none', dendrogram='row', RowSideColors=gender_colors)
@@ -137,11 +176,19 @@ heatmap.2(antho_clean_mat, trace='none', dendrogram='row', RowSideColors=gender_
 
 ![](README_files/figure-markdown_github/heatmap-1.png)
 
+###### Micronutrients
+
 ``` r
-# Ethiopia
-#eth_nutrition = read_csv('./nutrition_indicators/Ethiopia/eth_nutrition.csv')
-#eth_anthropometry = read_csv('./nutrition_indicators/Ethiopia/eth_anthropometry.csv')
+gender_colors = ifelse(mwi$sex == 'Male', 'red', 'blue')
+
+x = mwi %>% select(contains('def_'))
+x[x==TRUE] = 1
+x[x==FALSE] = 0
+x = as.matrix(x)
+heatmap.2(x, trace='none', RowSideColors=gender_colors)
 ```
+
+![](README_files/figure-markdown_github/heatmap_extended-1.png)
 
 ### Nutrition
 
@@ -156,15 +203,6 @@ ggplot(mwi, aes(bmiz06, fill=sex)) + geom_density(alpha=0.75)
 #### BMI relationship to household gender composition?
 
 ``` r
-# Create columns corresponding to gender ratio in each household
-hh_gender_composition = mwi %>%
-    group_by(hhid) %>% 
-    summarise(num_males=sum(sex == 'Male'), 
-              num_females=sum(sex == 'Female')) %>%
-    mutate(ratio_female = num_females / (num_females + num_males))
-
-mwi = merge(mwi, hh_gender_composition)
-
 table(mwi$ratio_female)
 ```
 
@@ -219,46 +257,6 @@ for (group in split(dec_types, ceiling(seq_along(dec_types) / 5))) {
 #### Aggregate micronutrients
 
 ``` r
-# most common missing micronutrients
-colSums(mwi%>% select(contains('def_')))
-```
-
-    ##     def_kcal_rec_hh     def_kcal_req_hh     def_prot_rec_hh 
-    ##                  71                 106                 203 
-    ##     def_prot_req_hh     def_iron_rec_hh     def_iron_req_hh 
-    ##                 216                  11                  71 
-    ##     def_zinc_rec_hh     def_zinc_req_hh   def_vita_A_rec_hh 
-    ##                  29                  59                 173 
-    ##   def_vita_A_req_hh   def_vita_E_rec_hh   def_vita_E_req_hh 
-    ##                 227                  84                 117 
-    ##   def_vita_C_rec_hh   def_vita_C_req_hh    def_ribof_rec_hh 
-    ##                 257                 322                 216 
-    ##    def_ribof_req_hh     def_thia_rec_hh     def_thia_req_hh 
-    ##                 301                 305                 354 
-    ##      def_nia_rec_hh      def_nia_req_hh  def_vita_B6_rec_hh 
-    ##                 167                 243                 218 
-    ##  def_vita_B6_req_hh      def_fol_rec_hh      def_fol_req_hh 
-    ##                 287                  51                  94 
-    ##  def_calcium_rec_hh  def_calcium_req_hh def_vita_B12_rec_hh 
-    ##                   8                   8                 134 
-    ## def_vita_B12_req_hh      def_kcal_ae_hh 
-    ##                 134                 429
-
-``` r
-# Add a column: missing one or more key micronutrients: Iron, Zinc, Folate, Vitamin A
-mwi = mwi %>% mutate(missing_micronutrient=(def_iron_rec_hh == TRUE     | 
-                                            def_fol_rec_hh == TRUE      | 
-                                            def_calcium_rec_hh == TRUE  | 
-                                            def_thia_rec_hh == TRUE     | 
-                                            def_vita_A_rec_hh == TRUE   | 
-                                            def_vita_B6_rec_hh == TRUE  | 
-                                            def_vita_B12_rec_hh == TRUE | 
-                                            def_vita_C_rec_hh == TRUE   | 
-                                            def_vita_E_rec_hh == TRUE   |
-                                            def_zinc_rec_hh == TRUE     |
-                                            def_ribof_rec_hh == TRUE
-                                            ))
-
 table(mwi$missing_micronutrient)
 ```
 

@@ -98,6 +98,32 @@ for (x in dec_types) {
 # Gender colors
 gender_colors = ifelse(mwi_anthro_clean$sex == 'Male', 'red', 'blue')
 
+# Create columns corresponding to gender ratio in each household
+hh_gender_composition = mwi %>%
+    group_by(hhid) %>% 
+    summarise(num_males=sum(sex == 'Male'), 
+              num_females=sum(sex == 'Female')) %>%
+    mutate(ratio_female = num_females / (num_females + num_males))
+
+mwi = merge(mwi, hh_gender_composition)
+
+# most common missing micronutrients
+colSums(mwi%>% select(contains('def_')))
+
+# Add a column: missing one or more key micronutrients: Iron, Zinc, Folate, Vitamin A
+mwi = mwi %>% mutate(missing_micronutrient=(def_iron_rec_hh == TRUE     | 
+                                            def_fol_rec_hh == TRUE      | 
+                                            def_calcium_rec_hh == TRUE  | 
+                                            def_thia_rec_hh == TRUE     | 
+                                            def_vita_A_rec_hh == TRUE   | 
+                                            def_vita_B6_rec_hh == TRUE  | 
+                                            def_vita_B12_rec_hh == TRUE | 
+                                            def_vita_C_rec_hh == TRUE   | 
+                                            def_vita_E_rec_hh == TRUE   |
+                                            def_zinc_rec_hh == TRUE     |
+                                            def_ribof_rec_hh == TRUE
+                                            ))
+
 # Numeric part of anthropometry data
 antho_clean_mat = as.matrix(mwi_anthro_clean %>% select(haz06, waz06, whz06, bmiz06))
 ```
@@ -117,13 +143,23 @@ title("Biplot")
 ```
 ##### Heatmap
 
+###### Anthro data
+
 ```{r heatmap}
 # Heatmap
 heatmap.2(antho_clean_mat, trace='none', dendrogram='row', RowSideColors=gender_colors)
+```
 
-# Ethiopia
-#eth_nutrition = read_csv('./nutrition_indicators/Ethiopia/eth_nutrition.csv')
-#eth_anthropometry = read_csv('./nutrition_indicators/Ethiopia/eth_anthropometry.csv')
+###### Micronutrients
+
+```{r heatmap_extended, fig.width=1920/96, fig.height=1920/96}
+gender_colors = ifelse(mwi$sex == 'Male', 'red', 'blue')
+
+x = mwi %>% select(contains('def_'))
+x[x==TRUE] = 1
+x[x==FALSE] = 0
+x = as.matrix(x)
+heatmap.2(x, trace='none', RowSideColors=gender_colors)
 ```
 
 ### Nutrition
@@ -137,15 +173,6 @@ ggplot(mwi, aes(bmiz06, fill=sex)) + geom_density(alpha=0.75)
 #### BMI relationship to household gender composition?
 
 ```{r bmi_vs_household_gender_composition, fig.width=1920/96}
-# Create columns corresponding to gender ratio in each household
-hh_gender_composition = mwi %>%
-    group_by(hhid) %>% 
-    summarise(num_males=sum(sex == 'Male'), 
-              num_females=sum(sex == 'Female')) %>%
-    mutate(ratio_female = num_females / (num_females + num_males))
-
-mwi = merge(mwi, hh_gender_composition)
-
 table(mwi$ratio_female)
 
 # BMI by household gender composition (only use ratios for which we have > 5
@@ -186,23 +213,6 @@ for (group in split(dec_types, ceiling(seq_along(dec_types) / 5))) {
 #### Aggregate micronutrients
 
 ```{r deficiencies_by_head_of_household_agg}
-# most common missing micronutrients
-colSums(mwi%>% select(contains('def_')))
-
-# Add a column: missing one or more key micronutrients: Iron, Zinc, Folate, Vitamin A
-mwi = mwi %>% mutate(missing_micronutrient=(def_iron_rec_hh == TRUE     | 
-                                            def_fol_rec_hh == TRUE      | 
-                                            def_calcium_rec_hh == TRUE  | 
-                                            def_thia_rec_hh == TRUE     | 
-                                            def_vita_A_rec_hh == TRUE   | 
-                                            def_vita_B6_rec_hh == TRUE  | 
-                                            def_vita_B12_rec_hh == TRUE | 
-                                            def_vita_C_rec_hh == TRUE   | 
-                                            def_vita_E_rec_hh == TRUE   |
-                                            def_zinc_rec_hh == TRUE     |
-                                            def_ribof_rec_hh == TRUE
-                                            ))
-
 table(mwi$missing_micronutrient)
 
 ggplot(mwi, aes(missing_micronutrient, fill=hh_female)) +
